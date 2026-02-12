@@ -1,6 +1,7 @@
+import 'package:flutter/material.dart';
+
 import 'package:flutter_boardview/board_item.dart';
 import 'package:flutter_boardview/boardview.dart';
-import 'package:flutter/material.dart';
 
 typedef OnDropList = void Function(int? listIndex, int? oldListIndex);
 typedef OnTapList = void Function(int? listIndex);
@@ -18,6 +19,8 @@ class BoardList extends StatefulWidget {
   final OnStartDragList? onStartDragList;
   final BoxScrollView Function(NullableIndexedWidgetBuilder itemBuilder)? listBuilder;
   final bool draggable;
+  final Decoration? listDecoration;
+  final EdgeInsets? listMargin;
 
   const BoardList({
     Key? key,
@@ -33,6 +36,8 @@ class BoardList extends StatefulWidget {
     this.onTapList,
     this.onStartDragList,
     this.listBuilder,
+    this.listDecoration,
+    this.listMargin
   }) : super(key: key);
 
   final int? index;
@@ -188,8 +193,8 @@ class BoardListState extends State<BoardList> with AutomaticKeepAliveClientMixin
     widget.boardView!.listStates.insert(widget.index!, this);
 
     return Container(
-        margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
+        margin: widget.listMargin ?? const EdgeInsets.all(8),
+        decoration: widget.listDecoration ?? BoxDecoration(
           color: backgroundColor,
           borderRadius: const BorderRadius.all(Radius.circular(8)),
         ),
