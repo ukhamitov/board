@@ -16,8 +16,8 @@ class BoardView extends StatefulWidget {
   final bool isSelecting;
   final BoardViewController? boardViewController;
   final int dragDelay;
-  final EdgeInsets? listMargin;
-  final Decoration? listDecoration;
+  final EdgeInsets listMargin;
+  final Decoration listDecoration;
 
   final Function(bool)? itemInMiddleWidget;
   final OnDropBottomWidget? onDropItemInMiddleWidget;
@@ -31,8 +31,8 @@ class BoardView extends StatefulWidget {
     this.onDropItemInMiddleWidget,
     this.isSelecting = false,
     this.lists,
-    this.listMargin,
-    this.listDecoration,
+    required this.listMargin,
+    required this.listDecoration,
     this.width = 280,
     this.middleWidget,
     this.bottomPadding,
