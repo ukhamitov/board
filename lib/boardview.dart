@@ -2,10 +2,11 @@ library flutter_boardview;
 
 import 'dart:core';
 
-import 'package:flutter_boardview/board_list.dart';
-import 'package:flutter_boardview/boardview_controller.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import 'package:flutter_boardview/board_list.dart';
+import 'package:flutter_boardview/boardview_controller.dart';
 
 class BoardView extends StatefulWidget {
   final List<BoardList>? lists;
@@ -15,6 +16,8 @@ class BoardView extends StatefulWidget {
   final bool isSelecting;
   final BoardViewController? boardViewController;
   final int dragDelay;
+  final EdgeInsets? listMargin;
+  final Decoration? listDecoration;
 
   final Function(bool)? itemInMiddleWidget;
   final OnDropBottomWidget? onDropItemInMiddleWidget;
@@ -28,6 +31,8 @@ class BoardView extends StatefulWidget {
     this.onDropItemInMiddleWidget,
     this.isSelecting = false,
     this.lists,
+    this.listMargin,
+    this.listDecoration,
     this.width = 280,
     this.middleWidget,
     this.bottomPadding,
@@ -398,6 +403,8 @@ class BoardViewState extends State<BoardView>
             onTapList: widget.lists![index].onTapList,
             onStartDragList: widget.lists![index].onStartDragList,
             listBuilder: widget.lists![index].listBuilder,
+            listMargin: widget.listMargin,
+            listDecoration: widget.listDecoration,
           );
         }
         if (widget.lists![index].index != index) {
@@ -415,6 +422,8 @@ class BoardViewState extends State<BoardView>
             onTapList: widget.lists![index].onTapList,
             onStartDragList: widget.lists![index].onStartDragList,
             listBuilder: widget.lists![index].listBuilder,
+            listMargin: widget.listMargin,
+            listDecoration: widget.listDecoration,
           );
         }
 
