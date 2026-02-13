@@ -19,8 +19,8 @@ class BoardList extends StatefulWidget {
   final OnStartDragList? onStartDragList;
   final BoxScrollView Function(NullableIndexedWidgetBuilder itemBuilder)? listBuilder;
   final bool draggable;
-  final EdgeInsets? listMargin;
-  final Decoration? listDecoration;
+  final EdgeInsets listMargin;
+  final Decoration listDecoration;
 
   const BoardList({
     Key? key,
@@ -36,8 +36,8 @@ class BoardList extends StatefulWidget {
     this.onTapList,
     this.onStartDragList,
     this.listBuilder,
-    this.listDecoration,
-    this.listMargin = const EdgeInsets.all(8)
+    required this.listDecoration,
+    required this.listMargin
   }) : super(key: key);
 
   final int? index;
@@ -191,20 +191,10 @@ class BoardListState extends State<BoardList> with AutomaticKeepAliveClientMixin
       widget.boardView!.listStates.removeAt(widget.index!);
     }
     widget.boardView!.listStates.insert(widget.index!, this);
-
-    Decoration? decoration;
-    if (widget.listDecoration == null) {
-      decoration = BoxDecoration(
-        color: backgroundColor,
-        borderRadius: const BorderRadius.all(Radius.circular(8)),
-      );
-    } else {
-      decoration = widget.listDecoration;
-    }
     
     return Container(
         margin: widget.listMargin,
-        decoration: decoration,
+        decoration: widget.listDecoration,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.end,
