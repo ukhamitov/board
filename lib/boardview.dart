@@ -18,6 +18,10 @@ class BoardView extends StatefulWidget {
   final int dragDelay;
   final EdgeInsets? listMargin;
   final Decoration? listDecoration;
+  /// When non-null, used for the list (column) over which an item is being dragged.
+  final Decoration? listDecorationWhenDragOver;
+  /// When non-null, applied to the widget shown while dragging an item.
+  final Decoration? draggedItemDecoration;
 
   final Function(bool)? itemInMiddleWidget;
   final OnDropBottomWidget? onDropItemInMiddleWidget;
@@ -33,6 +37,8 @@ class BoardView extends StatefulWidget {
     this.lists,
     this.listMargin,
     this.listDecoration,
+    this.listDecorationWhenDragOver,
+    this.draggedItemDecoration,
     this.width = 280,
     this.middleWidget,
     this.bottomPadding,
@@ -361,11 +367,11 @@ class BoardViewState extends State<BoardView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    if (kDebugMode) {
-      print("dy:$dy");
-      print("topListY:$topListY");
-      print("bottomListY:$bottomListY");
-    }
+    // if (kDebugMode) {
+    //   print("dy:$dy");
+    //   print("topListY:$topListY");
+    //   print("bottomListY:$bottomListY");
+    // }
     if (boardViewController.hasClients) {
       WidgetsBinding.instance.addPostFrameCallback((Duration duration) {
         try {
@@ -389,6 +395,11 @@ class BoardViewState extends State<BoardView>
       scrollDirection: Axis.horizontal,
       controller: boardViewController,
       itemBuilder: (BuildContext context, int index) {
+        final isDragTarget = draggedListIndex == index && draggedItemIndex != null;
+        final listDecoration = isDragTarget &&
+            widget.listDecorationWhenDragOver != null
+            ? widget.listDecorationWhenDragOver!
+            : widget.listDecoration;
         if (widget.lists![index].boardView == null) {
           widget.lists![index] = BoardList(
             key: widget.lists![index].key,
@@ -404,10 +415,11 @@ class BoardViewState extends State<BoardView>
             onStartDragList: widget.lists![index].onStartDragList,
             listBuilder: widget.lists![index].listBuilder,
             listMargin: widget.listMargin,
-            listDecoration: widget.listDecoration,
+            listDecoration: listDecoration ?? const BoxDecoration(),
           );
         }
-        if (widget.lists![index].index != index) {
+        if (widget.lists![index].index != index ||
+            widget.lists![index].listDecoration != listDecoration) {
           widget.lists![index] = BoardList(
             key: widget.lists![index].key,
             items: widget.lists![index].items,
@@ -423,7 +435,7 @@ class BoardViewState extends State<BoardView>
             onStartDragList: widget.lists![index].onStartDragList,
             listBuilder: widget.lists![index].listBuilder,
             listMargin: widget.listMargin,
-            listDecoration: widget.listDecoration,
+            listDecoration: listDecoration ?? const BoxDecoration(),
           );
         }
 
@@ -571,9 +583,9 @@ class BoardViewState extends State<BoardView>
               RenderBox box = _middleWidgetKey.currentContext!
                   .findRenderObject() as RenderBox;
               tempBottom = box.size.height;
-              if (kDebugMode) {
-                print("tempBot?tom:$tempBottom");
-              }
+              // if (kDebugMode) {
+              //   print("tempBot?tom:$tempBottom");
+              // }
             }
           }
           if (dy! > tempBottom! - 70) {
@@ -682,12 +694,19 @@ class BoardViewState extends State<BoardView>
           setState(() {});
         }
       });
+      final draggedChild = widget.draggedItemDecoration != null
+          ? DecoratedBox(
+        decoration: widget.draggedItemDecoration!,
+        child: Opacity(opacity: .7, child: draggedItem),
+      )
+          : Opacity(opacity: .7, child: draggedItem);
       stackWidgets.add(Positioned(
         width: widget.width,
         height: height,
         left: (dx! - offsetX!) + initialX!,
         top: (dy! - offsetY!) + initialY!,
-        child: Opacity(opacity: .7, child: draggedItem),
+        //child: Opacity(opacity: .7, child: draggedItem),
+        child: draggedChild,
       ));
     }
 

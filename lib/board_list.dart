@@ -21,6 +21,8 @@ class BoardList extends StatefulWidget {
   final bool draggable;
   final EdgeInsets? listMargin;
   final Decoration? listDecoration;
+  final bool isDragTarget;
+  final Decoration? listDecorationWhenDragOver;
 
   const BoardList({
     Key? key,
@@ -37,7 +39,9 @@ class BoardList extends StatefulWidget {
     this.onStartDragList,
     this.listBuilder,
     this.listDecoration,
-    this.listMargin
+    this.listMargin,
+    this.isDragTarget = false,
+    this.listDecorationWhenDragOver,
   }) : super(key: key);
 
   final int? index;
@@ -191,13 +195,22 @@ class BoardListState extends State<BoardList> with AutomaticKeepAliveClientMixin
       widget.boardView!.listStates.removeAt(widget.index!);
     }
     widget.boardView!.listStates.insert(widget.index!, this);
+
+    final effectiveDecoration = widget.isDragTarget &&
+        widget.listDecorationWhenDragOver != null
+        ? widget.listDecorationWhenDragOver!
+        : widget.listDecoration ?? BoxDecoration(
+      color: backgroundColor,
+      borderRadius: const BorderRadius.all(Radius.circular(24.0)),
+    );
     
     return Container(
         margin: widget.listMargin ?? const EdgeInsets.only(left: 10.0),
-        decoration: widget.listDecoration ?? BoxDecoration(
+        decoration: effectiveDecoration,
+        /*decoration: widget.listDecoration ?? BoxDecoration(
           color: backgroundColor,
           borderRadius: const BorderRadius.all(Radius.circular(24.0)),
-        ),
+        ),*/
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.end,
