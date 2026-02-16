@@ -23,6 +23,8 @@ class BoardList extends StatefulWidget {
   final Decoration? listDecoration;
   final bool isDragTarget;
   final Decoration? listDecorationWhenDragOver;
+  /// Decoration when the list has no items (e.g. dashed border for empty drop zone).
+  final Decoration? listDecorationWhenEmpty;
 
   const BoardList({
     Key? key,
@@ -42,6 +44,7 @@ class BoardList extends StatefulWidget {
     this.listMargin,
     this.isDragTarget = false,
     this.listDecorationWhenDragOver,
+    this.listDecorationWhenEmpty,
   }) : super(key: key);
 
   final int? index;
@@ -196,21 +199,19 @@ class BoardListState extends State<BoardList> with AutomaticKeepAliveClientMixin
     }
     widget.boardView!.listStates.insert(widget.index!, this);
 
-    final effectiveDecoration = widget.isDragTarget &&
-        widget.listDecorationWhenDragOver != null
-        ? widget.listDecorationWhenDragOver!
-        : widget.listDecoration ?? BoxDecoration(
-      color: backgroundColor,
-      borderRadius: const BorderRadius.all(Radius.circular(24.0)),
-    );
+    final bool isEmpty = widget.items == null || widget.items!.isEmpty;
+    final effectiveDecoration = isEmpty && widget.listDecorationWhenEmpty != null
+        ? widget.listDecorationWhenEmpty!
+        : widget.isDragTarget && widget.listDecorationWhenDragOver != null
+            ? widget.listDecorationWhenDragOver!
+            : widget.listDecoration ?? BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: const BorderRadius.all(Radius.circular(24.0)),
+                );
     
     return Container(
         margin: widget.listMargin ?? const EdgeInsets.only(left: 10.0),
         decoration: effectiveDecoration,
-        /*decoration: widget.listDecoration ?? BoxDecoration(
-          color: backgroundColor,
-          borderRadius: const BorderRadius.all(Radius.circular(24.0)),
-        ),*/
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.end,
