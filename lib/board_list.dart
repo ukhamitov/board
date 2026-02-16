@@ -23,7 +23,6 @@ class BoardList extends StatefulWidget {
   final Decoration? listDecoration;
   final bool isDragTarget;
   final Decoration? listDecorationWhenDragOver;
-  /// Decoration when the list has no items (e.g. dashed border for empty drop zone).
   final Decoration? listDecorationWhenEmpty;
 
   const BoardList({

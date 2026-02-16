@@ -20,6 +20,8 @@ class BoardView extends StatefulWidget {
   final Decoration? listDecoration;
   /// When non-null, used for the list (column) over which an item is being dragged.
   final Decoration? listDecorationWhenDragOver;
+  /// Decoration when the list has no items (e.g. dashed border for empty drop zone).
+  final Decoration? listDecorationWhenEmpty;
   /// When non-null, applied to the widget shown while dragging an item.
   final Decoration? draggedItemDecoration;
 
@@ -38,6 +40,7 @@ class BoardView extends StatefulWidget {
     this.listMargin,
     this.listDecoration,
     this.listDecorationWhenDragOver,
+    this.listDecorationWhenEmpty,
     this.draggedItemDecoration,
     this.width = 280,
     this.middleWidget,
@@ -395,11 +398,13 @@ class BoardViewState extends State<BoardView>
       scrollDirection: Axis.horizontal,
       controller: boardViewController,
       itemBuilder: (BuildContext context, int index) {
+        final isListEmpty = widget.lists![index].items?.isEmpty == true;
         final isDragTarget = draggedListIndex == index && draggedItemIndex != null;
-        final listDecoration = isDragTarget &&
+        final listDecoration = (isDragTarget &&
             widget.listDecorationWhenDragOver != null
-            ? widget.listDecorationWhenDragOver!
-            : widget.listDecoration;
+            ? widget.listDecorationWhenDragOver! : isListEmpty &&
+            widget.listDecorationWhenEmpty != null ? widget.listDecorationWhenEmpty! :
+            widget.listDecoration);
         if (widget.lists![index].boardView == null) {
           widget.lists![index] = BoardList(
             key: widget.lists![index].key,
