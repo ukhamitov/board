@@ -102,7 +102,7 @@ class BoardListState extends State<BoardList> with AutomaticKeepAliveClientMixin
   @override
   bool get wantKeepAlive => true;
 
-  Widget _itemBuilder(ctx, index) {
+  Widget  _itemBuilder(ctx, index) {
     if (widget.items![index].boardList == null ||
         widget.items![index].index != index ||
         widget.items![index].boardList!.widget.index != widget.index ||
@@ -131,13 +131,14 @@ class BoardListState extends State<BoardList> with AutomaticKeepAliveClientMixin
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    List<Widget> headerWidgets = [];
     List<Widget> listWidgets = [];
     if (_header != null) {
       Color? headerBackgroundColor = Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4);
       if (widget.headerBackgroundColor != null) {
         headerBackgroundColor = widget.headerBackgroundColor;
       }
-      listWidgets.add(GestureDetector(
+      headerWidgets.add(GestureDetector(
           onTap: () {
             if (widget.onTapList != null) {
               widget.onTapList!(widget.index);
@@ -208,13 +209,22 @@ class BoardListState extends State<BoardList> with AutomaticKeepAliveClientMixin
                   borderRadius: const BorderRadius.all(Radius.circular(24.0)),
                 );
     
-    return Container(
-        margin: widget.listMargin ?? const EdgeInsets.only(left: 10.0),
-        decoration: effectiveDecoration,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: listWidgets,
-        ));
+    return Column(children: [
+      Container(
+          margin: widget.listMargin ?? const EdgeInsets.only(left: 10.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: headerWidgets,
+          )),
+      Container(
+          margin: widget.listMargin ?? const EdgeInsets.only(left: 10.0),
+          decoration: effectiveDecoration,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: listWidgets,
+          ))
+    ]);
   }
 }
