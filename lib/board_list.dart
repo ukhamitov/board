@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import 'package:flutter_boardview/board_item.dart';
@@ -131,14 +133,32 @@ class BoardListState extends State<BoardList> with AutomaticKeepAliveClientMixin
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    List<Widget> headerWidgets = [];
+    if (widget.boardView!.listStates.length > widget.index!) {
+      widget.boardView!.listStates.removeAt(widget.index!);
+    }
+    widget.boardView!.listStates.insert(widget.index!, this);
+
+    Color? backgroundColor = Theme.of(context).colorScheme.onInverseSurface;
+    if (widget.backgroundColor != null) {
+      backgroundColor = widget.backgroundColor;
+    }
+    final bool isEmpty = widget.items == null || widget.items!.isEmpty;
+    final effectiveDecoration = isEmpty && widget.listDecorationWhenEmpty != null
+        ? widget.listDecorationWhenEmpty!
+        : widget.isDragTarget && widget.listDecorationWhenDragOver != null
+            ? widget.listDecorationWhenDragOver!
+            : widget.listDecoration ?? BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: const BorderRadius.all(Radius.circular(24.0)),
+                );
+
     List<Widget> listWidgets = [];
     if (_header != null) {
       Color? headerBackgroundColor = Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4);
       if (widget.headerBackgroundColor != null) {
         headerBackgroundColor = widget.headerBackgroundColor;
       }
-      headerWidgets.add(GestureDetector(
+      listWidgets.add(GestureDetector(
           onTap: () {
             if (widget.onTapList != null) {
               widget.onTapList!(widget.index);
@@ -169,62 +189,61 @@ class BoardListState extends State<BoardList> with AutomaticKeepAliveClientMixin
             child: Row(mainAxisSize: MainAxisSize.max, mainAxisAlignment: MainAxisAlignment.center, children: _header!),
           )));
     }
-    if (widget.items != null) {
-      if (widget.listBuilder != null) {
-        listWidgets.add(Flexible(fit: FlexFit.tight, child: widget.listBuilder!(_itemBuilder)));
-      } else {
-        listWidgets.add(Flexible(
-            fit: FlexFit.tight,
-            child: ListView.builder(
-              shrinkWrap: true,
-              physics: const AlwaysScrollableScrollPhysics(),
-              controller: boardListController,
-              itemCount: widget.items!.length,
-              itemBuilder: _itemBuilder,
-            )));
-      }
+    // Show list area (header + bordered frame) even when list is empty or null
+    final listContent = widget.items != null
+        ? (widget.listBuilder != null
+            ? widget.listBuilder!(_itemBuilder)
+            : ListView.builder(
+                shrinkWrap: true,
+                physics: const AlwaysScrollableScrollPhysics(),
+                controller: boardListController,
+                itemCount: widget.items!.length,
+                itemBuilder: _itemBuilder,
+              ))
+        : null;
+    final bool isColumnDragTarget = widget.boardView!.draggedListIndex == widget.index &&
+        widget.boardView!.draggedItemIndex != null;
+    // Match list container corner radius so blur does not overlap the dashed border
+    const BorderRadius listBorderRadius = BorderRadius.all(Radius.circular(24.0));
+    Widget listArea = Container(
+      decoration: effectiveDecoration,
+      child: isColumnDragTarget && listContent != null
+          ? Stack(
+              children: [
+                listContent,
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: listBorderRadius,
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                      child: const ColoredBox(color: Color(0x00000000)),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : (listContent ?? const SizedBox.shrink()),
+    );
+    if (isEmpty) {
+      listArea = ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 80),
+        child: listArea,
+      );
     }
+    listWidgets.add(Flexible(
+        fit: FlexFit.tight,
+        child: listArea));
 
     if (widget.footer != null) {
       listWidgets.add(widget.footer!);
     }
 
-    Color? backgroundColor = Theme.of(context).colorScheme.onInverseSurface;
-
-    if (widget.backgroundColor != null) {
-      backgroundColor = widget.backgroundColor;
-    }
-    if (widget.boardView!.listStates.length > widget.index!) {
-      widget.boardView!.listStates.removeAt(widget.index!);
-    }
-    widget.boardView!.listStates.insert(widget.index!, this);
-
-    final bool isEmpty = widget.items == null || widget.items!.isEmpty;
-    final effectiveDecoration = isEmpty && widget.listDecorationWhenEmpty != null
-        ? widget.listDecorationWhenEmpty!
-        : widget.isDragTarget && widget.listDecorationWhenDragOver != null
-            ? widget.listDecorationWhenDragOver!
-            : widget.listDecoration ?? BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: const BorderRadius.all(Radius.circular(24.0)),
-                );
-    
-    return Column(children: [
-      Container(
+    return Container(
           margin: widget.listMargin ?? const EdgeInsets.only(left: 10.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: headerWidgets,
-          )),
-      Container(
-          margin: widget.listMargin ?? const EdgeInsets.only(left: 10.0),
-          decoration: effectiveDecoration,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.end,
             children: listWidgets,
-          ))
-    ]);
+          ));
   }
 }

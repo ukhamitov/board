@@ -213,23 +213,8 @@ class BoardViewState extends State<BoardView>
     if (draggedListIndex != null) {
       draggedListIndex = draggedListIndex! + 1;
     }
-    double closestValue = 10000;
-    draggedItemIndex = 0;
-    for (int i = 0; i < listStates[draggedListIndex!].itemStates.length; i++) {
-      if (listStates[draggedListIndex!].itemStates[i].mounted) {
-        RenderBox box = listStates[draggedListIndex!]
-            .itemStates[i]
-            .context
-            .findRenderObject() as RenderBox;
-        Offset pos = box.localToGlobal(Offset.zero);
-        var temp = (pos.dy - dy! + (box.size.height / 2)).abs();
-        if (temp < closestValue) {
-          closestValue = temp;
-          draggedItemIndex = i;
-          dyInit = dy;
-        }
-      }
-    }
+    // Append to target list; position is determined by default sort on drop
+    draggedItemIndex = widget.lists![draggedListIndex!].items!.length;
     widget.lists![draggedListIndex!].items!.insert(draggedItemIndex!, item);
     listStates[draggedListIndex!]
         .itemStates
@@ -311,23 +296,8 @@ class BoardViewState extends State<BoardView>
     if (draggedListIndex != null) {
       draggedListIndex = draggedListIndex! - 1;
     }
-    double closestValue = 10000;
-    draggedItemIndex = 0;
-    for (int i = 0; i < listStates[draggedListIndex!].itemStates.length; i++) {
-      if (listStates[draggedListIndex!].itemStates[i].mounted) {
-        RenderBox box = listStates[draggedListIndex!]
-            .itemStates[i]
-            .context
-            .findRenderObject() as RenderBox;
-        Offset pos = box.localToGlobal(Offset.zero);
-        var temp = (pos.dy - dy! + (box.size.height / 2)).abs();
-        if (temp < closestValue) {
-          closestValue = temp;
-          draggedItemIndex = i;
-          dyInit = dy;
-        }
-      }
-    }
+    // Append to target list; position is determined by default sort on drop
+    draggedItemIndex = widget.lists![draggedListIndex!].items!.length;
     widget.lists![draggedListIndex!].items!.insert(draggedItemIndex!, item);
     listStates[draggedListIndex!]
         .itemStates
@@ -572,16 +542,16 @@ class BoardViewState extends State<BoardView>
               });
             }
           }
-          if (0 <= draggedItemIndex! - 1 &&
-              dy! <
-                  topItemY! -
-                      listStates[draggedListIndex!]
-                              .itemStates[draggedItemIndex! - 1]
-                              .height /
-                          2) {
-            //move up
-            moveUp();
-          }
+          // Position selection disabled: do not reorder items during drag
+          // if (0 <= draggedItemIndex! - 1 &&
+          //     dy! <
+          //         topItemY! -
+          //             listStates[draggedListIndex!]
+          //                     .itemStates[draggedItemIndex! - 1]
+          //                     .height /
+          //                 2) {
+          //   moveUp();
+          // }
           double? tempBottom = bottomListY;
           if (widget.middleWidget != null) {
             if (_middleWidgetKey.currentContext != null) {
@@ -634,17 +604,17 @@ class BoardViewState extends State<BoardView>
               });
             }
           }
-          if (widget.lists![draggedListIndex!].items!.length >
-                  draggedItemIndex! + 1 &&
-              dy! >
-                  bottomItemY! +
-                      listStates[draggedListIndex!]
-                              .itemStates[draggedItemIndex! + 1]
-                              .height /
-                          2) {
-            //move down
-            moveDown();
-          }
+          // Position selection disabled: do not reorder items during drag
+          // if (widget.lists![draggedListIndex!].items!.length >
+          //         draggedItemIndex! + 1 &&
+          //     dy! >
+          //         bottomItemY! +
+          //             listStates[draggedListIndex!]
+          //                     .itemStates[draggedItemIndex! + 1]
+          //                     .height /
+          //                 2) {
+          //   moveDown();
+          // }
         } else {
           //dragging list
           if (0 <= draggedListIndex! - 1 && dx! < leftListX! + 45) {
