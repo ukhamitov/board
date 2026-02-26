@@ -69,6 +69,15 @@ class BoardListState extends State<BoardList> with AutomaticKeepAliveClientMixin
     super.initState();
   }
 
+  @override
+  void didUpdateWidget(covariant BoardList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Sync header from widget so it updates when list data/header changes (e.g. after move)
+    if (widget.header != oldWidget.header) {
+      setState(() => _header = widget.header);
+    }
+  }
+
   void updateHeader(List<Widget>? header) {
     setState(() => _header = header);
   }
