@@ -84,11 +84,33 @@ class BoardViewState extends State<BoardView>
 
   bool canDrag = true;
 
+  /// Returns true if [draggedListIndex] and (for item drag) [draggedItemIndex]
+  /// are within current [widget.lists] and [listStates] bounds.
+  bool _isDragIndexInBounds() {
+    if (widget.lists == null || widget.lists!.isEmpty) return false;
+    final listCount = widget.lists!.length;
+    if (draggedListIndex == null ||
+        draggedListIndex! < 0 ||
+        draggedListIndex! >= listCount) return false;
+    if (listStates.length != listCount) return false;
+    if (draggedItemIndex != null) {
+      final list = widget.lists![draggedListIndex!];
+      final itemStates = listStates[draggedListIndex!].itemStates;
+      final itemsLength = list.items?.length ?? 0;
+      if (draggedItemIndex! < 0 ||
+          draggedItemIndex! >= itemStates.length ||
+          draggedItemIndex! >= itemsLength) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /// Schedules reset of [canDrag] after [BoardView.dragDelay]. Call whenever
   /// [canDrag] is set to false so the board does not stay stuck (e.g. when
   /// animation has no clients or whenComplete throws).
   void _scheduleCanDragReset() {
-    Future.delayed(Duration(milliseconds: widget.dragDelay), () {
+    Future.delayed(Duration(milliseconds: 100), () {
       if (mounted) {
         setState(() {
           canDrag = true;
@@ -126,6 +148,7 @@ class BoardViewState extends State<BoardView>
   }
 
   void moveListRight() {
+    if (!_isDragIndexInBounds() || draggedItemIndex != null) return;
     var list = widget.lists![draggedListIndex!];
     var listState = listStates[draggedListIndex!];
     widget.lists!.removeAt(draggedListIndex!);
@@ -161,6 +184,7 @@ class BoardViewState extends State<BoardView>
   }
 
   void moveRight() {
+    if (!_isDragIndexInBounds() || draggedItemIndex == null) return;
     var item = widget.lists![draggedListIndex!].items![draggedItemIndex!];
     var itemState = listStates[draggedListIndex!].itemStates[draggedItemIndex!];
     widget.lists![draggedListIndex!].items!.removeAt(draggedItemIndex!);
@@ -171,12 +195,16 @@ class BoardViewState extends State<BoardView>
     if (draggedListIndex != null) {
       draggedListIndex = draggedListIndex! + 1;
     }
-    // Append to target list; position is determined by default sort on drop
-    draggedItemIndex = widget.lists![draggedListIndex!].items!.length;
-    widget.lists![draggedListIndex!].items!.insert(draggedItemIndex!, item);
-    listStates[draggedListIndex!]
-        .itemStates
-        .insert(draggedItemIndex!, itemState);
+    // Append to target list. Use min of both lengths so we never insert past
+    // either list (items and itemStates can be out of sync across rebuilds).
+    final targetListState = listStates[draggedListIndex!];
+    final targetItems = widget.lists![draggedListIndex!].items!;
+    final insertAt = targetListState.itemStates.length < targetItems.length
+        ? targetListState.itemStates.length
+        : targetItems.length;
+    draggedItemIndex = insertAt;
+    targetItems.insert(draggedItemIndex!, item);
+    targetListState.itemStates.insert(draggedItemIndex!, itemState);
     canDrag = false;
     _scheduleCanDragReset();
     if (listStates[draggedListIndex!].mounted) {
@@ -218,6 +246,7 @@ class BoardViewState extends State<BoardView>
   }
 
   void moveListLeft() {
+    if (!_isDragIndexInBounds() || draggedItemIndex != null) return;
     var list = widget.lists![draggedListIndex!];
     var listState = listStates[draggedListIndex!];
     widget.lists!.removeAt(draggedListIndex!);
@@ -254,6 +283,7 @@ class BoardViewState extends State<BoardView>
   }
 
   void moveLeft() {
+    if (!_isDragIndexInBounds() || draggedItemIndex == null) return;
     var item = widget.lists![draggedListIndex!].items![draggedItemIndex!];
     var itemState = listStates[draggedListIndex!].itemStates[draggedItemIndex!];
     widget.lists![draggedListIndex!].items!.removeAt(draggedItemIndex!);
@@ -264,12 +294,16 @@ class BoardViewState extends State<BoardView>
     if (draggedListIndex != null) {
       draggedListIndex = draggedListIndex! - 1;
     }
-    // Append to target list; position is determined by default sort on drop
-    draggedItemIndex = widget.lists![draggedListIndex!].items!.length;
-    widget.lists![draggedListIndex!].items!.insert(draggedItemIndex!, item);
-    listStates[draggedListIndex!]
-        .itemStates
-        .insert(draggedItemIndex!, itemState);
+    // Append to target list. Use min of both lengths so we never insert past
+    // either list (items and itemStates can be out of sync across rebuilds).
+    final targetListState = listStates[draggedListIndex!];
+    final targetItems = widget.lists![draggedListIndex!].items!;
+    final insertAt = targetListState.itemStates.length < targetItems.length
+        ? targetListState.itemStates.length
+        : targetItems.length;
+    draggedItemIndex = insertAt;
+    targetItems.insert(draggedItemIndex!, item);
+    targetListState.itemStates.insert(draggedItemIndex!, itemState);
     canDrag = false;
     _scheduleCanDragReset();
     if (listStates[draggedListIndex!].mounted) {
@@ -322,18 +356,23 @@ class BoardViewState extends State<BoardView>
     // }
     if (boardViewController.hasClients) {
       WidgetsBinding.instance.addPostFrameCallback((Duration duration) {
+        if (!mounted) return;
         try {
-          boardViewController.position.didUpdateScrollPositionBy(0);
+          if (boardViewController.hasClients) {
+            boardViewController.position.didUpdateScrollPositionBy(0);
+          }
         } catch (e) {
           if (kDebugMode) {
             print(e.toString());
           }
         }
-        bool scrollShown = boardViewController.position.maxScrollExtent != 0;
-        if (scrollShown != shown) {
-          setState(() {
-            shown = scrollShown;
-          });
+        if (boardViewController.hasClients) {
+          bool scrollShown = boardViewController.position.maxScrollExtent != 0;
+          if (scrollShown != shown && mounted) {
+            setState(() {
+              shown = scrollShown;
+            });
+          }
         }
       });
     }
@@ -426,7 +465,7 @@ class BoardViewState extends State<BoardView>
         dx != null &&
         dy != null &&
         height != null) {
-      if (canDrag && dxInit != null && dyInit != null && !isInBottomWidget) {
+      if (canDrag && dxInit != null && dyInit != null && !isInBottomWidget && _isDragIndexInBounds()) {
         if (draggedItemIndex != null &&
             draggedItem != null &&
             topItemY != null &&
@@ -476,47 +515,8 @@ class BoardViewState extends State<BoardView>
             //move right
             moveRight();
           }
-          if (dy! < topListY! + 70) {
-            //scroll up
-            if (listStates[draggedListIndex!].boardListController.hasClients &&
-                !isScrolling) {
-              isScrolling = true;
-              double pos = listStates[draggedListIndex!]
-                  .boardListController
-                  .position
-                  .pixels;
-              listStates[draggedListIndex!]
-                  .boardListController
-                  .animateTo(
-                      listStates[draggedListIndex!]
-                              .boardListController
-                              .position
-                              .pixels -
-                          5,
-                      duration: const Duration(milliseconds: 10),
-                      curve: Curves.ease)
-                  .whenComplete(() {
-                pos -= listStates[draggedListIndex!]
-                    .boardListController
-                    .position
-                    .pixels;
-                initialY ??= 0;
-//                if(widget.boardViewController != null) {
-//                  initialY -= pos;
-//                }
-                isScrolling = false;
-                if (topItemY != null) {
-                  topItemY = topItemY! + pos;
-                }
-                if (bottomItemY != null) {
-                  bottomItemY = bottomItemY! + pos;
-                }
-                if (mounted) {
-                  setState(() {});
-                }
-              });
-            }
-          }
+          // Vertical list scroll during drag disabled: no auto-scroll when
+          // dragging item near top or bottom of list.
           // Position selection disabled: do not reorder items during drag
           // if (0 <= draggedItemIndex! - 1 &&
           //     dy! <
@@ -526,69 +526,6 @@ class BoardViewState extends State<BoardView>
           //                     .height /
           //                 2) {
           //   moveUp();
-          // }
-          double? tempBottom = bottomListY;
-          if (widget.middleWidget != null) {
-            if (_middleWidgetKey.currentContext != null) {
-              RenderBox box = _middleWidgetKey.currentContext!
-                  .findRenderObject() as RenderBox;
-              tempBottom = box.size.height;
-              // if (kDebugMode) {
-              //   print("tempBot?tom:$tempBottom");
-              // }
-            }
-          }
-          if (dy! > tempBottom! - 70) {
-            //scroll down
-
-            if (listStates[draggedListIndex!].boardListController.hasClients) {
-              isScrolling = true;
-              double pos = listStates[draggedListIndex!]
-                  .boardListController
-                  .position
-                  .pixels;
-              listStates[draggedListIndex!]
-                  .boardListController
-                  .animateTo(
-                      listStates[draggedListIndex!]
-                              .boardListController
-                              .position
-                              .pixels +
-                          5,
-                      duration: const Duration(milliseconds: 10),
-                      curve: Curves.ease)
-                  .whenComplete(() {
-                pos -= listStates[draggedListIndex!]
-                    .boardListController
-                    .position
-                    .pixels;
-                initialY ??= 0;
-//                if(widget.boardViewController != null) {
-//                  initialY -= pos;
-//                }
-                isScrolling = false;
-                if (topItemY != null) {
-                  topItemY = topItemY! + pos;
-                }
-                if (bottomItemY != null) {
-                  bottomItemY = bottomItemY! + pos;
-                }
-                if (mounted) {
-                  setState(() {});
-                }
-              });
-            }
-          }
-          // Position selection disabled: do not reorder items during drag
-          // if (widget.lists![draggedListIndex!].items!.length >
-          //         draggedItemIndex! + 1 &&
-          //     dy! >
-          //         bottomItemY! +
-          //             listStates[draggedListIndex!]
-          //                     .itemStates[draggedItemIndex! + 1]
-          //                     .height /
-          //                 2) {
-          //   moveDown();
           // }
         } else {
           //dragging list
